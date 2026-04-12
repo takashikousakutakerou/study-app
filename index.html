@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>問題集マネージャー</title>
+
+    <meta name="theme-color" content="#1a73e8">
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="問題集管理">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        /* 全体のスタイル */
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; background-color: #ffffff; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; }
+        h2 { display: flex; align-items: center; font-size: 1.5em; margin-bottom: 20px; }
+        /* 学習目標エリア */
+        .goals-container { display: flex; gap: 15px; margin-bottom: 30px; }
+        @media (max-width: 768px) { .goals-container { flex-direction: column; } }
+        .goal-box { flex: 1; background-color: #e3f2fd; border: 1px solid #bbdefb; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
+        .goal-box h4 { margin-top: 0; margin-bottom: 15px; color: #1565c0; text-align: center; font-size: 1.1em; }
+        .goal-input-area { display: flex; gap: 5px; margin-bottom: 15px; }
+        .goal-input-area input { flex-grow: 1; padding: 8px; border: 1px solid #90caf9; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .goal-input-area button { background-color: #1a73e8; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 14px; cursor: pointer; white-space: nowrap; transition: background-color 0.2s; }
+        .goal-input-area button:hover { background-color: #1557b0; }
+        .goal-list { list-style-type: none; padding: 0; margin: 0; flex-grow: 1; }
+        .goal-item { background-color: #ffffff; border-radius: 4px; padding: 8px 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e3f2fd; }
+        .goal-text { display: flex; align-items: center; font-size: 14px; word-break: break-word; flex-grow: 1; margin-right: 10px; }
+        .goal-text::before { content: "・"; margin-right: 4px; color: #1a73e8; font-weight: bold; }
+        .goal-progress { padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f8f9fa; cursor: pointer; outline: none; }
+        .goal-progress.completed { background-color: #e8f5e9; color: #2e7d32; font-weight: bold; border-color: #81c784; }
+        /* 登録フォームエリア */
+        .form-container { background-color: #eef2fa; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        .btn-add { width: 100%; background-color: #1a73e8; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .btn-add:hover { background-color: #1557b0; }
+        /* 選択・削除エリア */
+        .manager-controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        select { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; appearance: auto; }
+        .btn-delete { background-color: #fff0f0; color: #d32f2f; border: 1px solid #ffcdd2; padding: 12px 20px; border-radius: 6px; font-size: 16px; cursor: pointer; white-space: nowrap; }
+        .btn-delete:hover { background-color: #ffebee; }
+        /* テーブルエリア */
+        .table-container { border: 1px solid #eee; border-radius: 8px; overflow: hidden; display: none; }
+        table { width: 100%; border-collapse: collapse; text-align: center; }
+        thead { background-color: #f1f3f4; }
+        th { padding: 15px 10px; font-weight: bold; border-bottom: 1px solid #ddd; }
+        td { padding: 12px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .status-btn { background: none; border: none; cursor: pointer; width: 60px; height: 60px; border-radius: 50%; transition: background-color 0.2s; display: inline-flex; justify-content: center; align-items: center; padding: 0; line-height: 1; }
+        .status-btn:hover { background-color: #f5f5f5; }
+        .state-empty { color: #999; font-size: 2em; font-weight: normal; }
+        .state-circle { color: #2e7d32; font-size: 3.2em; font-weight: normal; }
+        .state-triangle { color: #f57c00; font-size: 2em; font-weight: normal; }
+        .state-cross { color: #d32f2f; font-size: 2.6em; font-family: Arial, sans-serif; font-weight: lighter; }
+        .empty-message { text-align: center; color: #666; margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+    <h2>📊 問題集マネージャー</h2>
+
+    <div class="goals-container">
+        <div class="goal-box">
+            <h4>今週の目標</h4>
+            <div class="goal-input-area">
+                <input type="text" id="input-weekly" placeholder="目標を入力">
+                <button onclick="addGoal('weekly')">追加</button>
+            </div>
+            <ul id="list-weekly" class="goal-list"></ul>
+        </div>
+        <div class="goal-box">
+            <h4>今月の目標</h4>
+            <div class="goal-input-area">
+                <input type="text" id="input-monthly" placeholder="目標を入力">
+                <button onclick="addGoal('monthly')">追加</button>
+            </div>
+            <ul id="list-monthly" class="goal-list"></ul>
+        </div>
+        <div class="goal-box">
+            <h4>長期目標</h4>
+            <div class="goal-input-area">
+                <input type="text" id="input-longterm" placeholder="目標を入力">
+                <button onclick="addGoal('longterm')">追加</button>
+            </div>
+            <ul id="list-longterm" class="goal-list"></ul>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <div class="input-group">
+            <input type="text" id="workbookName" placeholder="問題集の名前（例：物理重要問題集）">
+        </div>
+        <div class="input-group">
+            <input type="number" id="totalQuestions" placeholder="問題数" min="1">
+        </div>
+        <button class="btn-add" onclick="addWorkbook()">+ 新しい問題集を登録</button>
+    </div>
+
+    <div class="manager-controls" id="managerControls" style="display: none;">
+        <select id="workbookSelect" onchange="changeWorkbook()"></select>
+        <button class="btn-delete" onclick="deleteWorkbook()">削除</button>
+    </div>
+
+    <div id="emptyState" class="empty-message">
+        登録された問題集がありません。上のフォームから登録してください。
+    </div>
+
+    <div class="table-container" id="tableContainer">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">No.</th>
+                    <th style="width: 25%;">1回目</th>
+                    <th style="width: 25%;">2回目</th>
+                    <th style="width: 25%;">3回目</th>
+                </tr>
+            </thead>
+            <tbody id="questionsBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // データ保存処理
+        function saveData() {
+            localStorage.setItem('workbookData', JSON.stringify(workbooks));
+            localStorage.setItem('goalsWeekly', document.getElementById('list-weekly').innerHTML);
+            localStorage.setItem('goalsMonthly', document.getElementById('list-monthly').innerHTML);
+            localStorage.setItem('goalsLongterm', document.getElementById('list-longterm').innerHTML);
+        }
+
+        // データ読み込み処理
+        function loadData() {
+            const savedWorkbooks = localStorage.getItem('workbookData');
+            if (savedWorkbooks) { workbooks = JSON.parse(savedWorkbooks); }
+            
+            document.getElementById('list-weekly').innerHTML = localStorage.getItem('goalsWeekly') || '';
+            document.getElementById('list-monthly').innerHTML = localStorage.getItem('goalsMonthly') || '';
+            document.getElementById('list-longterm').innerHTML = localStorage.getItem('goalsLongterm') || '';
+
+            document.querySelectorAll('.goal-progress').forEach(select => {
+                select.onchange = function() {
+                    if (this.value === '〇') { this.classList.add('completed'); } else { this.classList.remove('completed'); }
+                    saveData();
+                };
+            });
+        }
+
+        // 学習目標の追加処理
+        function addGoal(type) {
+            const inputElement = document.getElementById(`input-${type}`);
+            const text = inputElement.value.trim();
+            if (!text) return; 
+
+            const listElement = document.getElementById(`list-${type}`);
+            const li = document.createElement('li');
+            li.className = 'goal-item';
+
+            const spanText = document.createElement('span');
+            spanText.className = 'goal-text';
+            spanText.textContent = text;
+
+            const select = document.createElement('select');
+            select.className = 'goal-progress';
+            for (let i = 0; i <= 90; i += 10) {
+                const option = document.createElement('option');
+                option.value = `${i}%`; option.textContent = `${i}%`; select.appendChild(option);
+            }
+            const optionComplete = document.createElement('option');
+            optionComplete.value = '〇'; optionComplete.textContent = '〇'; select.appendChild(optionComplete);
+
+            select.onchange = function() {
+                if (this.value === '〇') { this.classList.add('completed'); } else { this.classList.remove('completed'); }
+                saveData();
+            };
+
+            li.appendChild(spanText); li.appendChild(select); listElement.appendChild(li);
+            inputElement.value = ''; saveData();
+        }
+
+        // 問題集データと状態
+        let workbooks = [];
+        let currentWorkbookId = null;
+        const states = ['ー', '○', '△', '×'];
+        const stateClasses = { 'ー': 'state-empty', '○': 'state-circle', '△': 'state-triangle', '×': 'state-cross' };
+
+        // 問題集の追加処理
+        function addWorkbook() {
+            const nameInput = document.getElementById('workbookName').value.trim();
+            const countInput = parseInt(document.getElementById('totalQuestions').value, 10);
+            if (!nameInput) { alert("問題集の名前を入力してください。"); return; }
+            if (isNaN(countInput) || countInput <= 0) { alert("正しい問題数を入力してください。"); return; }
+
+            const questions = [];
+            for (let i = 0; i < countInput; i++) { questions.push(['ー', 'ー', 'ー']); }
+
+            const newWorkbook = { id: Date.now().toString(), name: nameInput, count: countInput, questions: questions };
+            workbooks.push(newWorkbook);
+            document.getElementById('workbookName').value = ''; document.getElementById('totalQuestions').value = '';
+
+            updateSelectOptions(); document.getElementById('workbookSelect').value = newWorkbook.id;
+            changeWorkbook(); saveData();
+        }
+
+        function updateSelectOptions() {
+            const select = document.getElementById('workbookSelect');
+            select.innerHTML = '';
+            if (workbooks.length === 0) {
+                document.getElementById('managerControls').style.display = 'none';
+                document.getElementById('tableContainer').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                currentWorkbookId = null; return;
+            }
+            document.getElementById('managerControls').style.display = 'flex';
+            document.getElementById('emptyState').style.display = 'none';
+            workbooks.forEach(wb => {
+                const option = document.createElement('option');
+                option.value = wb.id; option.textContent = wb.name; select.appendChild(option);
+            });
+        }
+
+        function changeWorkbook() {
+            const select = document.getElementById('workbookSelect');
+            currentWorkbookId = select.value; renderTable();
+        }
+
+        function deleteWorkbook() {
+            if (!currentWorkbookId) return;
+            if (confirm("この問題集を削除してもよろしいですか？（この操作は取り消せません）")) {
+                workbooks = workbooks.filter(wb => wb.id !== currentWorkbookId);
+                saveData(); updateSelectOptions();
+                if (workbooks.length > 0) { document.getElementById('workbookSelect').value = workbooks[0].id; changeWorkbook(); }
+            }
+        }
+
+        function toggleState(questionIndex, attemptIndex, btnElement) {
+            const workbook = workbooks.find(wb => wb.id === currentWorkbookId);
+            if (!workbook) return;
+            let currentState = workbook.questions[questionIndex][attemptIndex];
+            let nextStateIndex = (states.indexOf(currentState) + 1) % states.length;
+            let nextState = states[nextStateIndex];
+
+            workbook.questions[questionIndex][attemptIndex] = nextState;
+            btnElement.textContent = nextState; btnElement.className = `status-btn ${stateClasses[nextState]}`;
+            saveData();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('questionsBody');
+            tbody.innerHTML = '';
+            const workbook = workbooks.find(wb => wb.id === currentWorkbookId);
+            if (!workbook) { document.getElementById('tableContainer').style.display = 'none'; return; }
+
+            document.getElementById('tableContainer').style.display = 'block';
+            workbook.questions.forEach((attempts, qIndex) => {
+                const tr = document.createElement('tr');
+                const tdNo = document.createElement('td'); tdNo.textContent = qIndex + 1; tr.appendChild(tdNo);
+                attempts.forEach((state, attemptIndex) => {
+                    const tdAttempt = document.createElement('td');
+                    const btn = document.createElement('button');
+                    btn.textContent = state; btn.className = `status-btn ${stateClasses[state]}`;
+                    btn.onclick = () => toggleState(qIndex, attemptIndex, btn);
+                    tdAttempt.appendChild(btn); tr.appendChild(tdAttempt);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 初期化
+        window.onload = () => {
+            loadData(); updateSelectOptions();
+            if (workbooks.length > 0) { document.getElementById('workbookSelect').value = workbooks[0].id; changeWorkbook(); }
+        };
+
+        // Service Worker (PWA)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                }).catch(function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
