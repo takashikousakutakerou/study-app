@@ -289,8 +289,7 @@
                 });
             });
         }
-    // 📤 データを書き出す（エクスポート）
-function exportData() {
+    function exportData() {
     // アプリ内の全データをひとまとめの文字（JSON）に変換
     const dataStr = JSON.stringify(localStorage);
     
@@ -303,7 +302,7 @@ function exportData() {
     });
 }
 
-// 📥 データを読み込む（インポート）
+    // 📥 データを読み込む（インポート）
 function importData() {
     // 貼り付けるための入力画面を出す
     const inputData = prompt("別の端末から送った文字（データ）をここに貼り付けてください:");
@@ -328,6 +327,7 @@ function importData() {
         alert("データの読み込みに失敗しました。コピーした文字が最初から最後まで全て入っているか確認してください。");
     }
 }
+
     </script>
 </body>
 </html>
