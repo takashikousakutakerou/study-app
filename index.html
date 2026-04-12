@@ -154,37 +154,72 @@
         }
 
         // 学習目標の追加処理
-        function addGoal(type) {
-            const inputElement = document.getElementById(`input-${type}`);
-            const text = inputElement.value.trim();
-            if (!text) return; 
+function addGoal(type) {
+    const inputElement = document.getElementById(`input-${type}`);
+    const text = inputElement.value.trim();
+    if (!text) return; 
 
-            const listElement = document.getElementById(`list-${type}`);
-            const li = document.createElement('li');
-            li.className = 'goal-item';
+    const listElement = document.getElementById(`list-${type}`);
+    const li = document.createElement('li');
+    li.className = 'goal-item';
 
-            const spanText = document.createElement('span');
-            spanText.className = 'goal-text';
-            spanText.textContent = text;
+    const spanText = document.createElement('span');
+    spanText.className = 'goal-text';
+    spanText.textContent = text;
 
-            const select = document.createElement('select');
-            select.className = 'goal-progress';
-            for (let i = 0; i <= 90; i += 10) {
-                const option = document.createElement('option');
-                option.value = `${i}%`; option.textContent = `${i}%`; select.appendChild(option);
-            }
-            const optionComplete = document.createElement('option');
-            optionComplete.value = '〇'; optionComplete.textContent = '〇'; select.appendChild(optionComplete);
+    const select = document.createElement('select');
+    select.className = 'goal-progress';
+    for (let i = 0; i <= 90; i += 10) {
+        const option = document.createElement('option');
+        option.value = `${i}%`; 
+        option.textContent = `${i}%`; 
+        select.appendChild(option);
+    }
+    const optionComplete = document.createElement('option');
+    optionComplete.value = '〇'; 
+    optionComplete.textContent = '〇'; 
+    select.appendChild(optionComplete);
 
-            select.onchange = function() {
-                if (this.value === '〇') { this.classList.add('completed'); } else { this.classList.remove('completed'); }
-                saveData();
-            };
-
-            li.appendChild(spanText); li.appendChild(select); listElement.appendChild(li);
-            inputElement.value = ''; saveData();
+    select.onchange = function() {
+        if (this.value === '〇') { 
+            this.classList.add('completed'); 
+        } else { 
+            this.classList.remove('completed'); 
         }
+        saveData();
+    };
 
+    // 🌟 --- ここから追加：削除ボタンを作る --- 🌟
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '削除';
+    
+    // 画像に近いデザイン（CSS）を設定
+    deleteBtn.style.backgroundColor = '#fff0f0'; // 薄いピンクの背景
+    deleteBtn.style.color = '#d9534f';           // 赤系の文字色
+    deleteBtn.style.border = '1px solid #ffb3b3';// 赤系の枠線
+    deleteBtn.style.borderRadius = '5px';        // 角を丸くする
+    deleteBtn.style.padding = '2px 8px';         // ボタンの余白
+    deleteBtn.style.marginLeft = '10px';         // 左側のパーツとの間隔
+    deleteBtn.style.cursor = 'pointer';          // カーソルを指マークに
+    
+    // 削除ボタンが押されたときの動き
+    deleteBtn.onclick = function() {
+        if (confirm("この目標を削除してもよろしいですか？")) {
+            li.remove(); // 画面からこの目標（li）を消す
+            saveData();  // 消したあとの状態を保存する
+        }
+    };
+    // 🌟 --- ここまで --- 🌟
+
+    // 組み立てたパーツを合体させる（deleteBtnを追加）
+    li.appendChild(spanText); 
+    li.appendChild(select); 
+    li.appendChild(deleteBtn); // 削除ボタンもくっつける
+    
+    listElement.appendChild(li);
+    inputElement.value = ''; 
+    saveData();
+}
         // 問題集データと状態
         let workbooks = [];
         let currentWorkbookId = null;
