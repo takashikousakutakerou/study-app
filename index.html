@@ -121,6 +121,12 @@
         </table>
     </div>
 
+    <div style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+      <h3>🔄 データの共有・バックアップ</h3>
+      <button onclick="exportData()" style="padding: 10px; margin-right: 10px;">📤 データを書き出す</button>
+      <button onclick="importData()" style="padding: 10px;">📥 データを読み込む</button>
+    </div>
+
     <script>
         // データ保存処理
         function saveData() {
@@ -283,6 +289,45 @@
                 });
             });
         }
+    // 📤 データを書き出す（エクスポート）
+function exportData() {
+    // アプリ内の全データをひとまとめの文字（JSON）に変換
+    const dataStr = JSON.stringify(localStorage);
+    
+    // スマホやPCのクリップボード（コピーしたものを覚えておく場所）に保存
+    navigator.clipboard.writeText(dataStr).then(() => {
+        alert("データをコピーしました！\nLINEのKeepメモやメールなどに貼り付けて、別の端末に送ってください。");
+    }).catch(err => {
+        // もしクリップボード機能が動かなかった場合の予備
+        prompt("以下の文字をすべてコピーしてください:", dataStr);
+    });
+}
+
+// 📥 データを読み込む（インポート）
+function importData() {
+    // 貼り付けるための入力画面を出す
+    const inputData = prompt("別の端末から送った文字（データ）をここに貼り付けてください:");
+    
+    // キャンセルボタンが押されたり、空っぽだった場合は何もしない
+    if (!inputData) return; 
+
+    try {
+        // 文字を元のデータ形式に戻す
+        const parsedData = JSON.parse(inputData);
+        
+        // データを一つずつアプリの金庫（localStorage）に保存していく
+        for (const key in parsedData) {
+            localStorage.setItem(key, parsedData[key]);
+        }
+        
+        alert("データの読み込みが完了しました！画面を更新して反映します。");
+        location.reload(); // 画面を再読み込みして最新の状態にする
+        
+    } catch (error) {
+        // 文字が途切れていたり、間違っていた場合のエラーメッセージ
+        alert("データの読み込みに失敗しました。コピーした文字が最初から最後まで全て入っているか確認してください。");
+    }
+}
     </script>
 </body>
 </html>
