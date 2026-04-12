@@ -138,20 +138,36 @@
 
         // データ読み込み処理
         function loadData() {
-            const savedWorkbooks = localStorage.getItem('workbookData');
-            if (savedWorkbooks) { workbooks = JSON.parse(savedWorkbooks); }
-            
-            document.getElementById('list-weekly').innerHTML = localStorage.getItem('goalsWeekly') || '';
-            document.getElementById('list-monthly').innerHTML = localStorage.getItem('goalsMonthly') || '';
-            document.getElementById('list-longterm').innerHTML = localStorage.getItem('goalsLongterm') || '';
+    const savedWorkbooks = localStorage.getItem('workbookData');
+    if (savedWorkbooks) { workbooks = JSON.parse(savedWorkbooks); }
+    
+    document.getElementById('list-weekly').innerHTML = localStorage.getItem('goalsWeekly') || '';
+    document.getElementById('list-monthly').innerHTML = localStorage.getItem('goalsMonthly') || '';
+    document.getElementById('list-longterm').innerHTML = localStorage.getItem('goalsLongterm') || '';
 
-            document.querySelectorAll('.goal-progress').forEach(select => {
-                select.onchange = function() {
-                    if (this.value === '〇') { this.classList.add('completed'); } else { this.classList.remove('completed'); }
-                    saveData();
-                };
-            });
+    // ▼ 既存のプルダウン（〇や％）の機能復活
+    document.querySelectorAll('.goal-progress').forEach(select => {
+        select.onchange = function() {
+            if (this.value === '〇') { this.classList.add('completed'); } else { this.classList.remove('completed'); }
+            saveData();
+        };
+    });
+
+    // 🌟 ▼ ここから追加：リロード後の「削除ボタン」の機能復活 ▼ 🌟
+    // 3つの目標リストの中にあるボタンをすべて探す
+    document.querySelectorAll('#list-weekly button, #list-monthly button, #list-longterm button').forEach(btn => {
+        // もしボタンの文字が「削除」なら、クリックした時の機能を再度セットする
+        if (btn.textContent === '削除') {
+            btn.onclick = function() {
+                if (confirm("この目標を削除してもよろしいですか？")) {
+                    btn.parentElement.remove(); // 親要素（目標の行全体）を消す
+                    saveData();                 // 消した状態を保存する
+                }
+            };
         }
+    });
+    // 🌟 ▲ ここまで追加 ▲ 🌟
+}
 
         // 学習目標の追加処理
 function addGoal(type) {
