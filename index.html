@@ -107,6 +107,18 @@
         登録された問題集がありません。上のフォームから登録してください。
     </div>
 
+    <div class="manager-controls" id="managerControls" style="display: none;">
+        <select id="workbookSelect" onchange="changeWorkbook()"></select>
+        <button class="btn-delete" onclick="deleteWorkbook()">削除</button>
+    </div>
+
+    <div id="paginationContainer" style="display: none; text-align: center; margin-top: 10px; margin-bottom: -20px; font-size: 14px; color: #555; display: flex; justify-content: center; align-items: center; gap: 15px;">
+        <button id="prevPageBtn" onclick="changePage(-1)" style="border:none; background:none; cursor:pointer; font-size: 16px; color: #007bff; padding: 5px;">◀</button>
+        <span id="pageInfo">No. 1 〜 50</span>
+        <button id="nextPageBtn" onclick="changePage(1)" style="border:none; background:none; cursor:pointer; font-size: 16px; color: #007bff; padding: 5px;">▶</button>
+    </div>
+    <div id="emptyState" class="empty-message">
+
     <div class="table-container" id="tableContainer">
         <table>
             <thead>
@@ -239,6 +251,7 @@ function addGoal(type) {
         // 問題集データと状態
         let workbooks = [];
         let currentWorkbookId = null;
+        let currentPage = 0;5
         const states = ['ー', '○', '△', '×'];
         const stateClasses = { 'ー': 'state-empty', '○': 'state-circle', '△': 'state-triangle', '×': 'state-cross' };
 
@@ -279,7 +292,9 @@ function addGoal(type) {
 
         function changeWorkbook() {
             const select = document.getElementById('workbookSelect');
-            currentWorkbookId = select.value; renderTable();
+            currentWorkbookId = select.value;
+            currentPage = 0;
+            renderTable();
         }
 
         function deleteWorkbook() {
@@ -303,26 +318,74 @@ function addGoal(type) {
             saveData();
         }
 
-        function renderTable() {
-            const tbody = document.getElementById('questionsBody');
-            tbody.innerHTML = '';
-            const workbook = workbooks.find(wb => wb.id === currentWorkbookId);
-            if (!workbook) { document.getElementById('tableContainer').style.display = 'none'; return; }
+        // 🌟 ページをめくる関数（追加）
+function changePage(direction) {
+    currentPage += direction;
+    renderTable(); // ページを変えたら表を書き直す
+}
 
-            document.getElementById('tableContainer').style.display = 'block';
-            workbook.questions.forEach((attempts, qIndex) => {
-                const tr = document.createElement('tr');
-                const tdNo = document.createElement('td'); tdNo.textContent = qIndex + 1; tr.appendChild(tdNo);
-                attempts.forEach((state, attemptIndex) => {
-                    const tdAttempt = document.createElement('td');
-                    const btn = document.createElement('button');
-                    btn.textContent = state; btn.className = `status-btn ${stateClasses[state]}`;
-                    btn.onclick = () => toggleState(qIndex, attemptIndex, btn);
-                    tdAttempt.appendChild(btn); tr.appendChild(tdAttempt);
-                });
-                tbody.appendChild(tr);
-            });
-        }
+// 🌟 新しくなった renderTable 関数
+function renderTable() {
+    const tbody = document.getElementById('questionsBody');
+    tbody.innerHTML = '';
+    const workbook = workbooks.find(wb => wb.id === currentWorkbookId);
+    
+    if (!workbook) { 
+        document.getElementById('tableContainer').style.display = 'none'; 
+        document.getElementById('paginationContainer').style.display = 'none';
+        return; 
+    }
+
+    document.getElementById('tableContainer').style.display = 'block';
+    
+    // --- ページネーション（50問区切り）の計算 ---
+    const itemsPerPage = 50;
+    const totalQuestions = workbook.questions.length;
+    const maxPage = Math.ceil(totalQuestions / itemsPerPage) - 1; // 最後のページ番号
+    
+    // 現在のページが範囲外にならないよう調整（念のため）
+    if (currentPage < 0) currentPage = 0;
+    if (currentPage > maxPage) currentPage = maxPage;
+
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalQuestions);
+
+    // --- 切り替えボタンとテキストの表示設定 ---
+    if (totalQuestions > itemsPerPage) {
+        document.getElementById('paginationContainer').style.display = 'flex';
+        document.getElementById('pageInfo').textContent = `No. ${startIndex + 1} 〜 ${endIndex}`;
+        
+        // 最初のページなら「◀」を隠す（または薄くする）
+        document.getElementById('prevPageBtn').style.visibility = (currentPage === 0) ? 'hidden' : 'visible';
+        // 最後のページなら「▶」を隠す
+        document.getElementById('nextPageBtn').style.visibility = (currentPage === maxPage) ? 'hidden' : 'visible';
+    } else {
+        // 50問以下の問題集なら、切り替えボタン自体を隠す
+        document.getElementById('paginationContainer').style.display = 'none';
+    }
+
+    // --- 指定された範囲（50問分）だけを表に書き出す ---
+    for (let qIndex = startIndex; qIndex < endIndex; qIndex++) {
+        const attempts = workbook.questions[qIndex];
+        const tr = document.createElement('tr');
+        
+        const tdNo = document.createElement('td'); 
+        tdNo.textContent = qIndex + 1; 
+        tr.appendChild(tdNo);
+        
+        attempts.forEach((state, attemptIndex) => {
+            const tdAttempt = document.createElement('td');
+            const btn = document.createElement('button');
+            btn.textContent = state; 
+            btn.className = `status-btn ${stateClasses[state]}`;
+            // 🌟 修正：qIndex は全体の番号（0〜49, 50〜99）になっているのでそのまま渡す
+            btn.onclick = () => toggleState(qIndex, attemptIndex, btn);
+            tdAttempt.appendChild(btn); 
+            tr.appendChild(tdAttempt);
+        });
+        tbody.appendChild(tr);
+    }
+}
 
         // 初期化
         window.onload = () => {
