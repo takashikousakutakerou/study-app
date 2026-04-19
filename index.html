@@ -135,8 +135,11 @@
 
     <div style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
       <h3>🔄 データの共有・バックアップ</h3>
-      <button onclick="exportData()" style="padding: 10px; margin-right: 10px;">📤 データを書き出す</button>
-      <button onclick="importData()" style="padding: 10px;">📥 データを読み込む</button>
+      <button onclick="exportData()" style="padding: 10px; margin-right: 10px; margin-bottom: 10px;">📤 データを書き出す</button>
+      <br>
+      <textarea id="importDataInput" placeholder="ここに別の端末から送ったデータを貼り付けてください" style="width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;"></textarea>
+      <br>
+      <button onclick="importData()" style="padding: 10px;">📥 枠の中のデータを読み込む</button>
     </div>
 
     <script>
@@ -418,11 +421,14 @@ function renderTable() {
 
     // 📥 データを読み込む（インポート）
 function importData() {
-    // 貼り付けるための入力画面を出す
-    const inputData = prompt("別の端末から送った文字（データ）をここに貼り付けてください:");
+    // ポップアップではなく、先ほど作ったtextareaの枠から文字を取得する
+    const inputData = document.getElementById("importDataInput").value.trim();
     
-    // キャンセルボタンが押されたり、空っぽだった場合は何もしない
-    if (!inputData) return; 
+    // 空っぽの場合は警告を出して終了
+    if (!inputData) {
+        alert("上の枠にデータが貼り付けられていません。");
+        return; 
+    }
 
     try {
         // 文字を元のデータ形式に戻す
@@ -433,12 +439,16 @@ function importData() {
             localStorage.setItem(key, parsedData[key]);
         }
         
+        // 読み込み終わったら枠の中を空にする
+        document.getElementById("importDataInput").value = "";
+        
         alert("データの読み込みが完了しました！画面を更新して反映します。");
         location.reload(); // 画面を再読み込みして最新の状態にする
         
     } catch (error) {
         // 文字が途切れていたり、間違っていた場合のエラーメッセージ
-        alert("データの読み込みに失敗しました。コピーした文字が最初から最後まで全て入っているか確認してください。");
+        console.error("読み込みエラー:", error);
+        alert("データの読み込みに失敗しました。\nデータが途切れているか、形式が間違っています。");
     }
 }
 
